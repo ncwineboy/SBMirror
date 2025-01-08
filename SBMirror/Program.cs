@@ -10,8 +10,6 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
-
-
 var retryPolicy = HttpPolicyExtensions.HandleTransientHttpError()
     .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
@@ -26,7 +24,6 @@ builder.Logging.AddConsole();
 builder.Services.AddSingleton<AmbientWeatherService>();
 builder.Services.AddSingleton<NationalWeatherService>();
 builder.Services.AddSingleton<CountdownService>();
-
 
 var app = builder.Build();
 

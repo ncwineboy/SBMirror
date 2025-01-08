@@ -1,0 +1,38 @@
+﻿@using System.Threading
+@implements IDisposable
+@inject ILogger<Clock> logger
+@rendermode InteractiveServer
+
+<div class="clock-grid">
+    <div class="time bright large light">@currentTime.ToString("h:mm")<sup class="seconds dimmed">@currentTime.Second.ToString("00")</sup> @currentTime.ToString("tt").ToLower()</div>
+    <div class="date normal medium">@currentTime.ToLongDateString()</div>
+</div>
+
+@code {
+    private DateTime currentTime;
+    private Timer? timer;
+    private readonly object timerLock = new object();
+
+    protected override void OnInitialized()
+    {
+        currentTime = DateTime.Now;
+        timer = new Timer(UpdateClock, null, 0, 1000);
+    }
+
+    private void UpdateClock(object? state)
+    {
+        lock (timerLock)
+        {
+            currentTime = DateTime.Now;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (timerLock)
+        {
+            timer?.Dispose();
+        }
+    }
+}
