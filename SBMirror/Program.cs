@@ -2,6 +2,7 @@ using Polly.Extensions.Http;
 using Polly;
 using SBMirror.Components;
 using SBMirror.Services;
+using SBMirror.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 

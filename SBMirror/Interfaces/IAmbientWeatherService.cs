@@ -4,6 +4,6 @@ namespace SBMirror.Interfaces
 {
     public interface IAmbientWeatherService
     {
-        Task<Lastdata> ReadWeatherStationData(string macAddress, string applicationKey, string apiKey);
+        Task<Lastdata> ReadWeatherStationData();
     }
 }

@@ -76,7 +76,8 @@ namespace SBMirror.Services
                                     icon = dayforecast[0].icon,
                                     day = DateTime.Now.AddDays(i).DayOfWeek.ToString(),
                                     high = dayforecast[0].temperature,
-                                    low = dayforecast[1].temperature
+                                    low = dayforecast[1].temperature,
+                                    probprecip = dayforecast[0].probabilityOfPrecipitation?.value ?? 0
                                 });
                             }
                             else

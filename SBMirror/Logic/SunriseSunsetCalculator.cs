@@ -1,11 +1,23 @@
-﻿using SBMirror.Models.Weather;
+﻿using SBMirror.Models;
+using SBMirror.Models.Weather;
 
 namespace SBMirror.Logic
 {
     internal static class SunriseSunsetCalculator
     {
-        public static SunriseSunset SunriseSunSetCalc(double latitude, double longitude)
+        public static SunriseSunset SunriseSunSetCalc()
         {
+            double latitude = 51.477928, longitude = -0.001545;
+            
+            var config = Settings.GetConfig("CurrentWeather");
+            if (config != null)
+            {
+                if (config.latitude != null && config.longitude != null)
+                {
+                    latitude = config.latitude;
+                    longitude = config.longitude;
+                }
+            }
             SunriseSunset returnval = new SunriseSunset();
             DateTime date = DateTime.UtcNow;
             returnval.SunriseUTC = CalculateSunrise(latitude, longitude, date);

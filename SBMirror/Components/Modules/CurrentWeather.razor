@@ -6,8 +6,6 @@
 @inject ILogger<CurrentWeather> logger
 @rendermode InteractiveServer
 
-<link rel="stylesheet" href="weather.css" />
-
 <table width="100%">
     <tr>
         <td valign="middle" align="right">
@@ -18,7 +16,7 @@
             }
             else
             {
-                <p>Calculating...</p>
+                <div class="dimmed">Calculating...</div>
             }
         </td>
         <td valign="middle" align="right">
@@ -29,13 +27,13 @@
             }
             else
             {
-                <p>Calculating...</p>
+                <div class="dimmed">Calculating...</div>
             }
         </td>
         <td valign="middle" align="right">
             @if (moonPhase == null)
             {
-                <p>Calculating...</p>
+                <div class="dimmed">Calculating...</div>
             }
             else
             {
@@ -61,44 +59,44 @@
             <td valign="middle" align="right">
                 @if (forecast.currentConditions != "N/A")
                 {
-                    <img src="@forecast.currentConditions" />
+                    <img src="@forecast.currentConditions" width="50"/>
                 }
             </td>
             <td colspan="2" align="right">
                 <div class="large light">
-                    <span class="bright">@current.tempf&deg;F</span>
+                    <span class="bright">@current.tempf&deg;</span>
                 </div>
             </td>
         </tr>
         <tr>
             <td colspan="3" align="right">
-                <h4>Feels like @current.feelsLike&deg;F</h4>
+                <div class="normal medium feelslike"><span class="dimmed">Feels like @current.feelsLike&deg;</span></div>
             </td>
         </tr>
     }
     else
     {
         <tr>
-            <td colspan="3">Loading...</td>
+            <td colspan="3"><div class="dimmed">Loading...</div></td>
         </tr>
     }
 </table>
 <hr />
 @if (forecast.forecast.Count > 0)
 {
-    <table width="100%">
+    <table class="small weather">
         @foreach (var day in forecast.forecast)
         {
-            <tr>
-                <td valign="middle" align="right">@day.day</td>
-                <td valign="middle" align="right">
+            <tr class="colored">
+                <td class="day">@day.day</td>
+                <td class="bright weather-icon">
                     @if (day.icon != null)
                     {
-                        <img src="@day.icon.Replace("medium", "small")" width="48" />
+                        <span class="wi weathericon"><img src="@day.icon.Replace("medium", "small")" width="30" /></span>
                     }
                 </td>
-                <td valign="middle" align="right"><font color="#FF0000">@day.high&deg;F</font></td>
-                <td valign="middle" align="right"><font color="#00FFFF">@day.low&deg;F</font></td>
+                <td class="align-right bright max-temp">@day.high&deg;</td>
+                <td class="align-right min-temp">@day.low&deg;</td>
             </tr>
         }
     </table>
@@ -114,7 +112,7 @@
     {
         try
         {
-            var weatherTask = ambient.ReadWeatherStationData("24:D7:EB:CF:2D:48", "c023fe6784564f48b85cdc3c09e9065545b24483988348cdab4ed003294f6eaa", "04df461c6e074ce3928465ae6799b9c1c60d9dbe68b44c60bf5502ef5973d248");
+            var weatherTask = ambient.ReadWeatherStationData();
             var forecastTask = nws.GenerateWeatherForecast();
 
             await Task.WhenAll(weatherTask, forecastTask);
@@ -122,7 +120,7 @@
             current = await weatherTask;
             forecast = await forecastTask;
 
-            sunriseSunset = SunriseSunsetCalculator.SunriseSunSetCalc(35.6538498, -81.3666442);
+            sunriseSunset = SunriseSunsetCalculator.SunriseSunSetCalc();
             moonPhase = MoonPhase.GetMoonPhaseImage(MoonPhase.MoonPhaseCalculator(DateTime.Now));
 
             ambient.LastdataChanged += HandleChange;

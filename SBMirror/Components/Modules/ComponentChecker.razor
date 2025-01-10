@@ -1,0 +1,37 @@
+﻿@using SBMirror.Components.Modules
+@using SBMirror.Models
+@rendermode InteractiveServer
+
+@foreach (var module in components)
+{
+	switch (module)
+	{
+		case "CLOCK":
+			<Clock />
+			break;
+		case "CURRENTWEATHER":
+			<CurrentWeather />
+			break;
+		case "PHOTOS":
+			<Photos />
+			break;
+		case "COUNTDOWN":
+			<Countdown />
+			break;
+		default:
+			break;
+	}
+}
+
+@code {
+	[Parameter]
+	public string region { get; set; } = string.Empty;
+
+	private List<string> components = new List<string>();
+
+	protected override void OnInitialized()
+	{
+		components = Settings.config.modules.Where(x => x.position.ToUpper() == region.ToUpper()).Select(x => x.name.ToUpper()).ToList();
+		base.OnInitialized();
+	}
+}

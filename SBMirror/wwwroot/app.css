@@ -152,12 +152,15 @@ sup {
         top: 0;
     }
 
-        .region.top.center, .region.bottom.center {
+        .region.top.center,
+        .region.bottom.center {
             left: 50%;
             transform: translateX(-50%);
         }
 
-        .region.top.right, .region.top.left, .region.top.center {
+        .region.top.right,
+        .region.top.left,
+        .region.top.center {
             top: 100%;
         }
 
@@ -165,7 +168,9 @@ sup {
         bottom: 0;
     }
 
-        .region.bottom.right, .region.bottom.center, .region.bottom.left {
+        .region.bottom.right,
+        .region.bottom.center,
+        .region.bottom.left {
             bottom: 100%;
         }
 
@@ -174,7 +179,8 @@ sup {
         text-align: center;
     }
 
-    .region.third, .region.middle.center {
+    .region.third,
+    .region.middle.center {
         width: 100%;
         text-align: center;
         transform: translateY(-50%);
@@ -196,7 +202,7 @@ sup {
         text-align: left;
     }
 
-    .region.table {
+    .region table {
         width: 100%;
         border-spacing: 0;
         border-collapse: separate;

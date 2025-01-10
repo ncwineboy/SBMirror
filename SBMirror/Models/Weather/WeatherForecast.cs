@@ -12,6 +12,7 @@
         public string? day { get; set; }
         public float high { get; set; }
         public float low { get; set; }
+        public float probprecip { get; set; }
 
     }
 }
