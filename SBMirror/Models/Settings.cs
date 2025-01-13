@@ -1,4 +1,6 @@
-﻿namespace SBMirror.Models
+﻿using System.Dynamic;
+
+namespace SBMirror.Models
 {
     public static class Settings
     {
@@ -31,14 +33,15 @@
                     name = "CurrentWeather",
                     position = "top right",
                     header = null,
-                    config = new
+                    config = new 
                     {
-                        intervalInSeconds = 15,
+                        intervalInSeconds = 30,
+                        daysToForecast = 10,
                         localWeatherStation = true,
                         wsType = "AWS",
-                        AWSMacAddress = "24:D7:EB:CF:2D:48",
-                        AWSApplicationKey = "c023fe6784564f48b85cdc3c09e9065545b24483988348cdab4ed003294f6eaa",
-                        AWSApiKey = "04df461c6e074ce3928465ae6799b9c1c60d9dbe68b44c60bf5502ef5973d248",
+                        wsMacAddress = "24:D7:EB:CF:2D:48",
+                        wsApplicationKey = "c023fe6784564f48b85cdc3c09e9065545b24483988348cdab4ed003294f6eaa",
+                        wsApiKey = "04df461c6e074ce3928465ae6799b9c1c60d9dbe68b44c60bf5502ef5973d248",
                         latitude = 35.6538498,
                         longitude = -81.3666442
                     }

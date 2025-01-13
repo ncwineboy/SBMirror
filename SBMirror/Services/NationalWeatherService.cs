@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SBMirror.Interfaces;
+using SBMirror.Models;
 using SBMirror.Models.Weather;
 
 namespace SBMirror.Services
@@ -11,10 +12,11 @@ namespace SBMirror.Services
     {
         private readonly IHttpClientFactory _factory;
         private readonly ILogger _logger;
-        private static int daysToForecast = 7;
-        private static int intervalInMinutes = 15;
+        
         private readonly System.Timers.Timer timer;
         public WeatherForecast latestForecast { get; set; } = new WeatherForecast();
+
+        private WeatherConfig config = new WeatherConfig();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NationalWeatherService"/> class.
@@ -24,10 +26,25 @@ namespace SBMirror.Services
         public NationalWeatherService(IHttpClientFactory factory, ILoggerFactory logger)
         {
             _factory = factory;
-            timer = new System.Timers.Timer(TimeSpan.FromMinutes(intervalInMinutes));
+
+            _logger = logger.CreateLogger(typeof(NationalWeatherService));
+
+            ExtractConfig();
+
+            timer = new System.Timers.Timer(TimeSpan.FromMinutes(config.intervalInSeconds));
             timer.Elapsed += TimerTick;
             timer.Enabled = true;
-            _logger = logger.CreateLogger(typeof(NationalWeatherService));
+        }
+
+        private void ExtractConfig()
+        {
+            var json = JsonConvert.SerializeObject(Settings.GetConfig("CurrentWeather") ?? new WeatherConfig());
+            config = JsonConvert.DeserializeObject<WeatherConfig>(json) ?? new WeatherConfig();
+            if (!config.IsValid())
+            {
+                _logger.LogWarning("Invalid configuration detected. Using default values.");
+                config = new WeatherConfig();
+            }
         }
 
         /// <summary>
@@ -55,18 +72,33 @@ namespace SBMirror.Services
             var returnval = new WeatherForecast();
             try
             {
-                var value = await GetCurrentConditions(35.6538498, -81.3666442);
+                var value = await GetCurrentConditions(config.latitude, config.longitude);
                 if (!string.IsNullOrEmpty(value))
                 {
                     returnval.currentConditions = value;
                 }
-                var forecast = await GetForecast(35.6538498, -81.3666442);
+                var forecast = await GetForecast(config.latitude, config.longitude);
                 if (forecast.properties != null && forecast.properties.periods != null)
                 {
                     if (forecast.properties.periods.Count > 0)
                     {
-                        for (int i = 0; i < daysToForecast; i++)
+                        int availableForecast = forecast.properties.periods.Select(x => DateOnly.FromDateTime(x.startTime)).Distinct().Count();
+                        int maxDays = (availableForecast < config.daysToForecast) ? availableForecast : config.daysToForecast;
+                        for (int i = 0; i < maxDays; i++)
                         {
+                            string dayofWeek = "";
+                            if (i == 0)
+                            {
+                                dayofWeek = "Today";
+                            }
+                            else if (i == 1)
+                            {
+                                dayofWeek = "Tomorrow";
+                            }
+                            else
+                            {
+                                dayofWeek = DateTime.Now.AddDays(i).DayOfWeek.ToString();
+                            }
                             var date = DateOnly.FromDateTime(DateTime.Now.AddDays(i));
                             var dayforecast = forecast.properties.periods.Where(x => DateOnly.FromDateTime(x.startTime) == date).ToList();
                             if (dayforecast.Count == 2)
@@ -74,7 +106,7 @@ namespace SBMirror.Services
                                 returnval.forecast.Add(new WeatherByDay
                                 {
                                     icon = dayforecast[0].icon,
-                                    day = DateTime.Now.AddDays(i).DayOfWeek.ToString(),
+                                    day = dayofWeek,
                                     high = dayforecast[0].temperature,
                                     low = dayforecast[1].temperature,
                                     probprecip = dayforecast[0].probabilityOfPrecipitation?.value ?? 0
@@ -82,7 +114,14 @@ namespace SBMirror.Services
                             }
                             else
                             {
-                                _logger.LogWarning($"Only have {dayforecast.Count} forecasts for {date}.");
+                                returnval.forecast.Add(new WeatherByDay
+                                {
+                                    icon = dayforecast[0].icon,
+                                    day = dayofWeek,
+                                    high = dayforecast[0].temperature,
+                                    low = dayforecast[0].temperature,
+                                    probprecip = dayforecast[0].probabilityOfPrecipitation?.value ?? 0
+                                });
                             }
                         }
                     }

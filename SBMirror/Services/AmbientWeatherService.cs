@@ -1,5 +1,4 @@
-﻿using System.Dynamic;
-using System.Timers;
+﻿using System.Timers;
 using Newtonsoft.Json;
 using SBMirror.Interfaces;
 using SBMirror.Models;
@@ -18,11 +17,7 @@ namespace SBMirror.Services
         private readonly System.Timers.Timer timer;
         public Lastdata current { get; set; } = new Lastdata();
 
-        private dynamic config = new ExpandoObject();
-        private static int intervalInSeconds = 15;
-        private string AWSMacAddress = "";
-        private string AWSApplicationKey = "";
-        private string AWSApiKey = "";
+        private WeatherConfig config = new WeatherConfig();
 
 
         /// <summary>
@@ -39,29 +34,19 @@ namespace SBMirror.Services
 
             ExtractConfig();
 
-            timer = new System.Timers.Timer(TimeSpan.FromSeconds(intervalInSeconds));
+            timer = new System.Timers.Timer(TimeSpan.FromSeconds(config.intervalInSeconds));
             timer.Elapsed += TimerTick;
             timer.Enabled = true;
         }
 
         private void ExtractConfig()
         {
-            config = Settings.GetConfig("CurrentWeather") ?? new ExpandoObject();
-            if (config.intervalInSeconds != null)
+            var json = JsonConvert.SerializeObject(Settings.GetConfig("CurrentWeather") ?? new WeatherConfig());
+            config = JsonConvert.DeserializeObject<WeatherConfig>(json) ?? new WeatherConfig();
+            if (!config.IsValid())
             {
-                intervalInSeconds = config.intervalInSeconds;
-            }
-            if (config.AWSMacAddress != null)
-            {
-                AWSMacAddress = config.AWSMacAddress;
-            }
-            if (config.AWSApplicationKey != null)
-            {
-                AWSApplicationKey = config.AWSApplicationKey;
-            }
-            if (config.AWSApiKey != null)
-            {
-                AWSApiKey = config.AWSApiKey;
+                _logger.LogWarning("Invalid configuration detected. Using default values.");
+                config = new WeatherConfig();
             }
         }
 
@@ -96,10 +81,10 @@ namespace SBMirror.Services
         public async Task<Lastdata> ReadWeatherStationData()
         {
             var returnval = new Lastdata();
-            if (!string.IsNullOrEmpty(AWSApplicationKey) && !string.IsNullOrEmpty(AWSApiKey))
+            if (!string.IsNullOrEmpty(config.wsApplicationKey) && !string.IsNullOrEmpty(config.wsApiKey))
             {
                 var httpClient = _factory.CreateClient("www");
-                var url = $"https://rt.ambientweather.net/v1/devices?applicationKey={AWSApplicationKey}&apiKey={AWSApiKey}";
+                var url = $"https://rt.ambientweather.net/v1/devices?applicationKey={config.wsApplicationKey}&apiKey={config.wsApiKey}";
                 try
                 {
                     var response = await httpClient.GetAsync(url);
@@ -110,9 +95,9 @@ namespace SBMirror.Services
                         if (observations.Count > 0)
                         {
                             AWSResponse? station = null;
-                            if (!string.IsNullOrEmpty(AWSMacAddress))
+                            if (!string.IsNullOrEmpty(config.wsMacAddress))
                             {
-                                station = observations.Where(x => x.macAddress != null && x.macAddress.ToUpper() == AWSMacAddress.ToUpper()).FirstOrDefault();
+                                station = observations.Where(x => x.macAddress != null && x.macAddress.ToUpper() == config.wsMacAddress.ToUpper()).FirstOrDefault();
                             }
                             else
                             {
