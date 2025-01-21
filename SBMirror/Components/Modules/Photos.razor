@@ -1,4 +1,9 @@
-﻿
+﻿<img src="@imageUrl" />
 @code {
+	private string imageUrl = string.Empty;
 
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+	}
 }

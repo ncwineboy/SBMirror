@@ -1,34 +1,55 @@
+:root {
+    --background-color: #000;
+    --text-color: #999;
+    --dimmed-color: #666;
+    --bright-color: #fff;
+    --primary-color: #1b6ec2;
+    --primary-border-color: #1861ac;
+    --link-color: #006bb7;
+    --error-color: #e50000;
+    --font-family: "Arial Narrow", sans-serif;
+    --font-size-base: 20px;
+    --margin-size: 40px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 html {
     cursor: none;
     overflow: hidden;
-    background: #000;
+    background: var(--background-color);
     user-select: none;
-    font-size: 20px;
+    font-size: var(--font-size-base);
 }
 
 body {
-    margin: 60px 60px 60px 60px;
+    margin: 0;
+    padding: 0;
     position: absolute;
-    height: calc(100% - 60px - 60px);
-    width: calc(100% - 60px - 60px);
-    background: #000;
-    color: #999;
-    font-family: "Tahoma", sans-serif;
+    height: calc(100% - 2 * var(--margin-size));
+    width: calc(100% - 2 * var(--margin-size));
+    background: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
     font-weight: 400;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
 }
 
 .dimmed {
-    color: #666;
+    color: var(--dimmed-color);
 }
 
 .normal {
-    color: #999;
+    color: var(--text-color);
 }
 
 .bright {
-    color: #fff;
+    color: var(--bright-color);
 }
 
 .xsmall {
@@ -58,22 +79,22 @@ body {
 }
 
 .thin {
-    font-family: "Tahoma", sans-serif;
+    font-family: var(--font-family);
     font-weight: 100;
 }
 
 .light {
-    font-family: "Tahoma", sans-serif;
+    font-family: var(--font-family);
     font-weight: 300;
 }
 
 .regular {
-    font-family: "Tahoma", sans-serif;
+    font-family: var(--font-family);
     font-weight: 400;
 }
 
 .bold {
-    font-family: "Tahoma", sans-serif;
+    font-family: var(--font-family);
     font-weight: 700;
 }
 
@@ -88,13 +109,13 @@ body {
 header {
     text-transform: uppercase;
     font-size: 0.75rem;
-    font-family: "Tahoma", Arial, Helvetica, sans-serif;
+    font-family: var(--font-family);
     font-weight: 400;
-    border-bottom: 1px solid #666;
+    border-bottom: 1px solid var(--dimmed-color);
     line-height: 15px;
     padding-bottom: 5px;
     margin-bottom: 10px;
-    color: #999;
+    color: var(--text-color);
 }
 
 sup {
@@ -103,8 +124,8 @@ sup {
 }
 
 /**
- * Module styles.
- */
+* Module styles.
+*/
 
 .module {
     margin-bottom: 30px;
@@ -139,7 +160,7 @@ sup {
 
     .region.fullscreen {
         position: absolute;
-        inset: calc(-1 * 60px) calc(-1 * 60px) calc(-1 * 60px) calc(-1 * 60px);
+        inset: calc(-1 * var(--margin-size));
         pointer-events: none;
     }
 
@@ -165,13 +186,14 @@ sup {
         }
 
     .region.bottom {
+        position: fixed;
         bottom: 0;
     }
 
         .region.bottom.right,
         .region.bottom.center,
         .region.bottom.left {
-            bottom: 100%;
+            bottom: 0;
         }
 
     .region.bar {
@@ -209,13 +231,13 @@ sup {
     }
 
 a, .btn-link {
-    color: #006bb7;
+    color: var(--link-color);
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    color: var(--bright-color);
+    background-color: var(--primary-color);
+    border-color: var(--primary-border-color);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -235,11 +257,11 @@ h1:focus {
 }
 
 .invalid {
-    outline: 1px solid #e50000;
+    outline: 1px solid var(--error-color);
 }
 
 .validation-message {
-    color: #e50000;
+    color: var(--error-color);
 }
 
 .blazor-error-boundary {
@@ -254,4 +276,29 @@ h1:focus {
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
+}
+
+calendar .symbol {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    padding-left: 0;
+    padding-right: 10px;
+    font-size: 1rem;
+}
+
+.calendar .symbol span {
+    padding-top: 4px;
+}
+
+.calendar .title {
+    padding-left: 0;
+    padding-right: 0;
+    vertical-align: top;
+}
+
+.calendar .time {
+    padding-left: 30px;
+    text-align: right;
+    vertical-align: top;
 }

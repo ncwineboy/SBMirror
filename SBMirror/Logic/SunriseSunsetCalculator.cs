@@ -3,20 +3,23 @@ using SBMirror.Models.Weather;
 
 namespace SBMirror.Logic
 {
+       
     internal static class SunriseSunsetCalculator
     {
+        /// <summary>
+        /// Calculates the sunrise and sunset times for a given location.
+        /// </summary>
+        /// <returns>A SunriseSunset object containing the calculated sunrise and sunset times, 
+        /// as well as a boolean indicating whether it is daytime.</returns>
         public static SunriseSunset SunriseSunSetCalc()
         {
             double latitude = 51.477928, longitude = -0.001545;
             
-            var config = Settings.GetConfig("CurrentWeather");
+            var config = Settings.GetConfig<ConfigWeather>("CurrentWeather") ?? new ConfigWeather();
             if (config != null)
             {
-                if (config.latitude != null && config.longitude != null)
-                {
                     latitude = config.latitude;
                     longitude = config.longitude;
-                }
             }
             SunriseSunset returnval = new SunriseSunset();
             DateTime date = DateTime.UtcNow;
@@ -27,16 +30,48 @@ namespace SBMirror.Logic
             return returnval;
         }
 
+        // Calculates the sunrise time for a given location on a specific date.
+        // 
+        // Parameters:
+        //   latitude (double): The latitude of the location.
+        //   longitude (double): The longitude of the location.
+        //   date (DateTime): The date for which the sunrise time is calculated.
+        // 
+        // Returns:
+        //   DateTime: The sunrise time for the given location on the specified date.
         private static DateTime CalculateSunrise(double latitude, double longitude, DateTime date)
         {
             return CalculateSunEvent(latitude, longitude, date, true);
         }
 
+        /// <summary>
+        /// Calculates the sunset time for a given location on a specific date.
+        /// 
+        /// Parameters:
+        ///   latitude (double): The latitude of the location.
+        ///   longitude (double): The longitude of the location.
+        ///   date (DateTime): The date for which the sunset time is calculated.
+        /// 
+        /// Returns:
+        ///   DateTime: The sunset time for the given location on the specified date.
+        /// </summary>
         private static DateTime CalculateSunset(double latitude, double longitude, DateTime date)
         {
             return CalculateSunEvent(latitude, longitude, date, false);
         }
 
+        /// <summary>
+        /// Calculates the time of a sunrise or sunset event for a given location on a specific date.
+        /// 
+        /// Parameters:
+        ///   latitude (double): The latitude of the location.
+        ///   longitude (double): The longitude of the location.
+        ///   date (DateTime): The date for which the sun event time is calculated.
+        ///   isSunrise (bool): A boolean indicating whether to calculate the sunrise (true) or sunset (false) time.
+        /// 
+        /// Returns:
+        ///   DateTime: The time of the sunrise or sunset event for the given location on the specified date, in UTC.
+        /// </summary>
         private static DateTime CalculateSunEvent(double latitude, double longitude, DateTime date, bool isSunrise)
         {
             int dayOfYear = date.DayOfYear;
@@ -98,16 +133,43 @@ namespace SBMirror.Logic
             return returnval;
         }
 
+        /// <summary>
+        /// Converts degrees to radians.
+        /// 
+        /// Parameters:
+        ///   degrees (double): The angle in degrees to be converted.
+        /// 
+        /// Returns:
+        ///   double: The angle in radians.
+        /// </summary>
         private static double DegToRad(double degrees)
         {
             return degrees * Math.PI / 180.0;
         }
 
+        /// <summary>
+        /// Converts radians to degrees.
+        /// 
+        /// Parameters:
+        ///   radians (double): The angle in radians to be converted.
+        /// 
+        /// Returns:
+        ///   double: The angle in degrees.
+        /// </summary>
         private static double RadToDeg(double radians)
         {
             return radians * 180.0 / Math.PI;
         }
 
+        /// <summary>
+        /// Normalizes an angle to the range [0, 360).
+        /// 
+        /// Parameters:
+        ///   angle (double): The angle to be normalized.
+        /// 
+        /// Returns:
+        ///   double: The normalized angle.
+        /// </summary>
         private static double NormalizeAngle(double angle)
         {
             angle %= 360;
@@ -115,6 +177,15 @@ namespace SBMirror.Logic
             return angle;
         }
 
+        /// <summary>
+        /// Normalizes a time to the range [0, 24).
+        /// 
+        /// Parameters:
+        ///   time (double): The time to be normalized.
+        /// 
+        /// Returns:
+        ///   double: The normalized time.
+        /// </summary>
         private static double NormalizeTime(double time)
         {
             time %= 24;

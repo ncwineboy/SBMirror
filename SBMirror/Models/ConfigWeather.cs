@@ -1,14 +1,12 @@
-﻿namespace SBMirror.Models.Weather
+﻿namespace SBMirror.Models
 {
-    public class WeatherConfig
+    public class ConfigWeather : ModuleConfigBase
     {
         private List<string> validWSTypes = new List<string>
         {
             "NONE",
             "AWS"
         };
-
-        public int intervalInSeconds { get; set; } = 15;
         public int daysToForecast { get; set; } = 5;
         public bool localWeatherStation { get; set; } = false;
         public string wsType { get; set; } = "NONE";
@@ -18,10 +16,10 @@
         public double latitude { get; set; } = 51.477928;
         public double longitude { get; set; } = -0.001545;
 
-        public bool IsValid()
+        public override bool IsValid() 
         {
-            return (intervalInSeconds > 0 && daysToForecast > 0 &&
-                validWSTypes.Any(x => x == wsType.ToUpper()));
+            return intervalInSeconds > 0 && daysToForecast > 0 &&
+                validWSTypes.Any(x => x == wsType.ToUpper());
         }
     }
 }

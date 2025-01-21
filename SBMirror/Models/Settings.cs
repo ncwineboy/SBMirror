@@ -1,4 +1,4 @@
-﻿using System.Dynamic;
+﻿using Newtonsoft.Json;
 
 namespace SBMirror.Models
 {
@@ -13,7 +13,7 @@ namespace SBMirror.Models
                     name = "Clock",
                     position = "top left",
                     header = null,
-                    config = new
+                    config = new ConfigClock
                     {
                         timeFormat = 12,
                         timezone = "America/New_York"
@@ -24,8 +24,50 @@ namespace SBMirror.Models
                     name = "Countdown",
                     position = "top center",
                     header = null,
-                    config = new
+                    config = new ConfigCountdown
                     {
+                        intervalInSeconds = 1,
+                        countdowns = new List<CountdownItem>
+                        {
+                            new CountdownItem
+                            {
+                                name = "Robbie's Birthday",
+                                date = new DateTime(1970, 8, 14, 0, 0, 0),
+                                daysBeforeStart = 30,
+                                recurring = true,
+                                showTime = false
+                            },
+                            new CountdownItem
+                            {
+                                name = "Rosalie's Birthday",
+                                date = new DateTime(1972, 2, 13, 0, 0, 0),
+                                daysBeforeStart = 30,
+                                recurring = true,
+                                showTime = false
+                            },
+                            new CountdownItem
+                            {
+                                name = "Kelly's Birthday",
+                                date = new DateTime(1974, 8, 5, 0, 0, 0),
+                                daysBeforeStart = 30,
+                                recurring = true,
+                                showTime = false
+                            },
+                            new CountdownItem
+                            {
+                                name = "Christmas",
+                                date = new DateTime(2025, 12, 25, 0, 0, 0),
+                                daysBeforeStart = 90,
+                                recurring = true
+                            },
+                            new CountdownItem
+                            {
+                                name = "New Years Day",
+                                date = new DateTime(2025, 1, 1, 0, 0, 0),
+                                daysBeforeStart = 5,
+                                recurring = true
+                            }
+                        }
                     }
                 },
                 new Module
@@ -33,7 +75,7 @@ namespace SBMirror.Models
                     name = "CurrentWeather",
                     position = "top right",
                     header = null,
-                    config = new 
+                    config = new ConfigWeather
                     {
                         intervalInSeconds = 30,
                         daysToForecast = 10,
@@ -48,19 +90,62 @@ namespace SBMirror.Models
                 },
                 new Module
                 {
-                    name = "Photos",
-                    position = "middle center",
+                    name = "NewsFeeds",
+                    position = "bottom bar",
                     header = null,
-                    config = new
+                    config = new ConfigRSSFeed
                     {
+                        intervalInSeconds = 900,
+                        displayLengthInSeconds = 180,
+                        feeds = new List<RSSFeed>
+                        {
+                           new RSSFeed
+                           {
+                               title = "New York Times",
+                               url = "https://rss.nytimes.com/services/xml/rss/nyt/US.xml"
+                           }
+                        }
+                    }
+                },
+                new Module
+                {
+                    name = "Calendar",
+                    position = "top left",
+                    header = null,
+                    config = new ConfigCalendar
+                    {
+                        Header = "Rogers Family Calendar",
+                        NumberOfDaysToShow = 7,
+                        Calendars = new List<CalendarItem>
+                        {
+                            new CalendarItem 
+                            {
+                                Name = "Google",
+                                Url = "https://calendar.google.com/calendar/ical/o92ckc0pjomtpsub624bang644%40group.calendar.google.com/private-952b2a11c0a0349173d89ede2977e4da/basic.ics"
+                            }
+                        }
                     }
                 }
             }
         };
 
-        public static dynamic? GetConfig(string moduleName)
+        public static T? GetConfig<T>(string moduleName)
         {
-            return config.modules.FirstOrDefault(x => x.name == moduleName)?.config;
+            var returnval = default(T);
+            var configPart = config.modules.FirstOrDefault(x => x.name == moduleName)?.config;
+            if (configPart != null)
+            {
+                try
+                {
+                    var json = JsonConvert.SerializeObject(configPart);
+                    returnval = (T)JsonConvert.DeserializeObject<T>(json);
+                }
+                catch (JsonException)
+                {
+
+                }
+            }
+            return returnval;
         }
     }
 }

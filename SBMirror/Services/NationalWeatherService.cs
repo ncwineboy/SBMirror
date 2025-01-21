@@ -1,5 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using System.Timers;
+using Newtonsoft.Json;
 using SBMirror.Interfaces;
+using SBMirror.Logic;
 using SBMirror.Models;
 using SBMirror.Models.Weather;
 
@@ -8,43 +10,18 @@ namespace SBMirror.Services
     /// <summary>
     /// Service to interact with the National Weather Service (NWS) API and fetch weather forecasts.
     /// </summary>
-    public class NationalWeatherService : INationalWeatherService, IDisposable
+    public class NationalWeatherService : MirrorModuleServiceBase<ConfigWeather>, INationalWeatherService, IDisposable
     {
-        private readonly IHttpClientFactory _factory;
-        private readonly ILogger _logger;
-        
-        private readonly System.Timers.Timer timer;
         public WeatherForecast latestForecast { get; set; } = new WeatherForecast();
-
-        private WeatherConfig config = new WeatherConfig();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NationalWeatherService"/> class.
         /// </summary>
         /// <param name="factory">The HTTP client factory.</param>
         /// <param name="logger">The logger factory.</param>
-        public NationalWeatherService(IHttpClientFactory factory, ILoggerFactory logger)
+        public NationalWeatherService(IHttpClientFactory factory, ILoggerFactory logger) : base(factory, logger, "CurrentWeather")
         {
-            _factory = factory;
 
-            _logger = logger.CreateLogger(typeof(NationalWeatherService));
-
-            ExtractConfig();
-
-            timer = new System.Timers.Timer(TimeSpan.FromMinutes(config.intervalInSeconds));
-            timer.Elapsed += TimerTick;
-            timer.Enabled = true;
-        }
-
-        private void ExtractConfig()
-        {
-            var json = JsonConvert.SerializeObject(Settings.GetConfig("CurrentWeather") ?? new WeatherConfig());
-            config = JsonConvert.DeserializeObject<WeatherConfig>(json) ?? new WeatherConfig();
-            if (!config.IsValid())
-            {
-                _logger.LogWarning("Invalid configuration detected. Using default values.");
-                config = new WeatherConfig();
-            }
         }
 
         /// <summary>
@@ -57,9 +34,9 @@ namespace SBMirror.Services
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        public void TimerTick(object? sender, EventArgs e)
+        public override async Task TimerTick(object? sender, ElapsedEventArgs e)
         {
-            latestForecast = GenerateWeatherForecast().Result;
+            latestForecast = await GenerateWeatherForecast();
             ForecastChanged?.Invoke(latestForecast);
         }
 
@@ -70,70 +47,73 @@ namespace SBMirror.Services
         public async Task<WeatherForecast> GenerateWeatherForecast()
         {
             var returnval = new WeatherForecast();
-            try
+            if (_config != null)
             {
-                var value = await GetCurrentConditions(config.latitude, config.longitude);
-                if (!string.IsNullOrEmpty(value))
+                try
                 {
-                    returnval.currentConditions = value;
-                }
-                var forecast = await GetForecast(config.latitude, config.longitude);
-                if (forecast.properties != null && forecast.properties.periods != null)
-                {
-                    if (forecast.properties.periods.Count > 0)
+                    var value = await GetCurrentConditions(_config.latitude, _config.longitude);
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        int availableForecast = forecast.properties.periods.Select(x => DateOnly.FromDateTime(x.startTime)).Distinct().Count();
-                        int maxDays = (availableForecast < config.daysToForecast) ? availableForecast : config.daysToForecast;
-                        for (int i = 0; i < maxDays; i++)
+                        returnval.currentConditions = value;
+                    }
+                    var forecast = await GetForecast(_config.latitude, _config.longitude);
+                    if (forecast.properties != null && forecast.properties.periods != null)
+                    {
+                        if (forecast.properties.periods.Count > 0)
                         {
-                            string dayofWeek = "";
-                            if (i == 0)
+                            int availableForecast = forecast.properties.periods.Select(x => DateOnly.FromDateTime(x.startTime)).Distinct().Count();
+                            int maxDays = (availableForecast < _config.daysToForecast) ? availableForecast : _config.daysToForecast;
+                            for (int i = 0; i < maxDays; i++)
                             {
-                                dayofWeek = "Today";
-                            }
-                            else if (i == 1)
-                            {
-                                dayofWeek = "Tomorrow";
-                            }
-                            else
-                            {
-                                dayofWeek = DateTime.Now.AddDays(i).DayOfWeek.ToString();
-                            }
-                            var date = DateOnly.FromDateTime(DateTime.Now.AddDays(i));
-                            var dayforecast = forecast.properties.periods.Where(x => DateOnly.FromDateTime(x.startTime) == date).ToList();
-                            if (dayforecast.Count == 2)
-                            {
-                                returnval.forecast.Add(new WeatherByDay
+                                string dayofWeek = "";
+                                if (i == 0)
                                 {
-                                    icon = dayforecast[0].icon,
-                                    day = dayofWeek,
-                                    high = dayforecast[0].temperature,
-                                    low = dayforecast[1].temperature,
-                                    probprecip = dayforecast[0].probabilityOfPrecipitation?.value ?? 0
-                                });
-                            }
-                            else
-                            {
-                                returnval.forecast.Add(new WeatherByDay
+                                    dayofWeek = "Today";
+                                }
+                                else if (i == 1)
                                 {
-                                    icon = dayforecast[0].icon,
-                                    day = dayofWeek,
-                                    high = dayforecast[0].temperature,
-                                    low = dayforecast[0].temperature,
-                                    probprecip = dayforecast[0].probabilityOfPrecipitation?.value ?? 0
-                                });
+                                    dayofWeek = "Tomorrow";
+                                }
+                                else
+                                {
+                                    dayofWeek = DateTime.Now.AddDays(i).DayOfWeek.ToString();
+                                }
+                                var date = DateOnly.FromDateTime(DateTime.Now.AddDays(i));
+                                var dayforecast = forecast.properties.periods.Where(x => DateOnly.FromDateTime(x.startTime) == date).ToList();
+                                if (dayforecast.Count == 2)
+                                {
+                                    returnval.forecast.Add(new WeatherByDay
+                                    {
+                                        icon = dayforecast[0].icon,
+                                        day = dayofWeek,
+                                        high = dayforecast[0].temperature,
+                                        low = dayforecast[1].temperature,
+                                        probprecip = dayforecast[0].probabilityOfPrecipitation?.value ?? 0
+                                    });
+                                }
+                                else
+                                {
+                                    returnval.forecast.Add(new WeatherByDay
+                                    {
+                                        icon = dayforecast[0].icon,
+                                        day = dayofWeek,
+                                        high = dayforecast[0].temperature,
+                                        low = dayforecast[0].temperature,
+                                        probprecip = dayforecast[0].probabilityOfPrecipitation?.value ?? 0
+                                    });
+                                }
                             }
                         }
                     }
                 }
-            }
-            catch (AggregateException ae)
-            {
-                _logger.LogError(ae.InnerException?.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
+                catch (AggregateException ae)
+                {
+                    _logger.LogError(ae.InnerException?.Message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.Message);
+                }
             }
             return returnval;
         }
@@ -174,7 +154,7 @@ namespace SBMirror.Services
         {
             var returnval = new weathergovForecast();
             var points = await GetPoints(latitude, longitude);
-            var httpClient = _factory.CreateClient("www");
+            var httpClient = GetClient();
             if (points != null && points.properties != null)
             {
                 var url = points.properties.forecast;
@@ -200,7 +180,7 @@ namespace SBMirror.Services
         private async Task<weathergovLatest> GetLatest(string url)
         {
             var returnval = new weathergovLatest();
-            var httpClient = _factory.CreateClient("www");
+            var httpClient = GetClient();
             var response = await httpClient.GetAsync(url);
             if (response.IsSuccessStatusCode)
             {
@@ -223,7 +203,7 @@ namespace SBMirror.Services
         private async Task<weathergovPoints> GetPoints(double latitude, double longitude)
         {
             var returnval = new weathergovPoints();
-            var httpClient = _factory.CreateClient("www");
+            var httpClient = GetClient();
             var url = $"https://api.weather.gov/points/{latitude},{longitude}";
             var response = await httpClient.GetAsync(url);
             if (response.IsSuccessStatusCode)
@@ -246,7 +226,7 @@ namespace SBMirror.Services
         private async Task<weathergovStations> GetStations(string url)
         {
             var returnval = new weathergovStations();
-            var httpClient = _factory.CreateClient("www");
+            var httpClient = GetClient();
             var response = await httpClient.GetAsync(url);
             if (response.IsSuccessStatusCode)
             {
@@ -258,15 +238,6 @@ namespace SBMirror.Services
                 _logger.LogWarning($"Received a {response.StatusCode} from {url}");
             }
             return returnval;
-        }
-
-        /// <summary>
-        /// Disposes the resources used by the <see cref="NationalWeatherService"/> class.
-        /// </summary>
-        public void Dispose()
-        {
-            timer.Stop();
-            timer.Dispose();
         }
     }
 }
