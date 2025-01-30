@@ -73,8 +73,15 @@ namespace SBMirror.Logic
                 }
                 else
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    return JsonConvert.DeserializeObject<T2>(json);
+                    try
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+                        return JsonConvert.DeserializeObject<T2>(json);
+                    }
+                    catch (JsonSerializationException jsonEx)
+                    {
+                        _logger.LogWarning(jsonEx.Message);
+                    }
                 }
             }
 

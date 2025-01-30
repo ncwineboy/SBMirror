@@ -9,8 +9,6 @@ namespace SBMirror.Services
     /// </summary>
     public class CountdownService : MirrorModuleServiceBase<ConfigCountdown>
     {
-        private ConfigCountdown config = new ConfigCountdown();
-
         private List<CountdownItem> ActiveCountdowns = new List<CountdownItem>();
 
         /// <summary>
@@ -52,17 +50,20 @@ namespace SBMirror.Services
         public async Task<List<CountdownItem>> GetCurrentCountdowns()
         {
             List<CountdownItem> returnval = new List<CountdownItem>();
-            try
+            if (_config != null)
             {
-                returnval = await Task.FromResult(config.countdowns.Where(x => x.ShowCountdown == true).ToList());
-            }
-            catch (AggregateException ae)
-            {
-                _logger.LogError(ae.InnerException?.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
+                try
+                {
+                    returnval = await Task.FromResult(_config.countdowns.Where(x => x.ShowCountdown == true).ToList());
+                }
+                catch (AggregateException ae)
+                {
+                    _logger.LogError(ae.InnerException?.Message);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.Message);
+                }
             }
             return returnval;
         }

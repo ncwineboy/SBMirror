@@ -7,6 +7,9 @@ using SBMirror.Models.Weather;
 
 namespace SBMirror.Services
 {
+    /// <summary>
+    /// Service to interact with the Ambient Weather API and fetch weather forecasts.
+    /// </summary>
     public class AmbientWeatherService : MirrorModuleServiceBase<ConfigWeather>, IAmbientWeatherService, IDisposable
     {
         public Lastdata current { get; set; } = new Lastdata();
@@ -24,6 +27,12 @@ namespace SBMirror.Services
 
         public event Action<Lastdata>? LastdataChanged;
 
+        /// <summary>
+        /// Timer tick event handler to fetch weather forecast periodically.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <returns></returns>
         public override async Task TimerTick(object? sender, ElapsedEventArgs e)
         {
             var value = await ReadWeatherStationData();
@@ -34,6 +43,10 @@ namespace SBMirror.Services
             }
         }
 
+        /// <summary>
+        /// Reads the weather station data.
+        /// </summary>
+        /// <returns></returns>
         public async Task<Lastdata> ReadWeatherStationData()
         {
             if (_config != null)

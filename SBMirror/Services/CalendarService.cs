@@ -1,7 +1,6 @@
 ﻿using System.Timers;
 using Ical.Net;
 using Ical.Net.DataTypes;
-using Newtonsoft.Json;
 using SBMirror.Logic;
 using SBMirror.Models;
 
@@ -90,9 +89,7 @@ namespace SBMirror.Services
         public List<CalendarEvent> ParseICS(string icsContent)
         {
             var events = new List<CalendarEvent>();
-            var lines = icsContent.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             var calendar = Calendar.Load(icsContent);
-
 
             var startDate = new CalDateTime(DateTime.Now);
             var endDate = startDate.AddDays(_config.NumberOfDaysToShow);

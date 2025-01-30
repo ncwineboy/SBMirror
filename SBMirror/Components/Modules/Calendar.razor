@@ -7,7 +7,6 @@
 <table class="calendar" width="100%">
 	@for (int i = 0; i < calendarConfig.NumberOfDaysToShow; i++)
 	{
-		int counter = 0;
 		var events = calendarEvents.Where(x => x.DaysFromNow == i).ToList().OrderBy(x => x.Start);
 		foreach (var _event in events)
 		{
@@ -16,7 +15,7 @@
 			{
 				classStr = "xsmall today";
 			}
-			@if (counter < 3)
+			@if (i < (calendarConfig.NumberOfDaysToShow / 2))
 			{
 				<tr class="@classStr">
 					<td class="title bright">@_event.Summary</td>
@@ -25,7 +24,7 @@
 			}
 			else
 			{
-				<tr class="@classStr" style="opacity: 1 - (@counter * (1/3))">
+				<tr class="@classStr" style="opacity: @(1 - ((i - (calendarConfig.NumberOfDaysToShow / 2) + 1) * 0.2))">
 					<td class="title bright">@_event.Summary</td>
 					<td class="time light" align="right">@_event.TimeTill</td>
 				</tr>

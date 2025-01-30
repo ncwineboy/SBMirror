@@ -115,7 +115,7 @@ namespace SBMirror.Models
                     config = new ConfigCalendar
                     {
                         Header = "Rogers Family Calendar",
-                        NumberOfDaysToShow = 7,
+                        NumberOfDaysToShow = 10,
                         Calendars = new List<CalendarItem>
                         {
                             new CalendarItem 
@@ -129,23 +129,29 @@ namespace SBMirror.Models
             }
         };
 
+        // Retrieves a configuration of type T for a given module name.
+        // 
+        // Parameters:
+        //   moduleName (string): The name of the module to retrieve the configuration for.
+        // 
+        // Returns:
+        //   T?: The configuration of type T if found, otherwise the default value of T.
         public static T? GetConfig<T>(string moduleName)
         {
-            var returnval = default(T);
             var configPart = config.modules.FirstOrDefault(x => x.name == moduleName)?.config;
-            if (configPart != null)
+            if (configPart == null)
             {
-                try
-                {
-                    var json = JsonConvert.SerializeObject(configPart);
-                    returnval = (T)JsonConvert.DeserializeObject<T>(json);
-                }
-                catch (JsonException)
-                {
-
-                }
+                return default;
             }
-            return returnval;
+
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(configPart));
+            }
+            catch (JsonException)
+            {
+                return default;
+            }
         }
     }
 }

@@ -104,29 +104,42 @@ namespace SBMirror.Services
         {
             NewsArticles.Clear();
             List<RSSArticle> articles = new List<RSSArticle>();
-            if (_config != null)
+
+            if (_config == null || _config.feeds == null)
             {
-                foreach (var feed in _config.feeds)
+                _logger.LogWarning("No RSS feeds configured.");
+                return articles;
+            }
+
+            foreach (var feed in _config.feeds)
+            {
+                try
                 {
-                    try
+                    if (string.IsNullOrEmpty(feed.url))
                     {
-                        var client = GetClient();
-                        var response = await client.GetAsync(feed?.url);
+                        _logger.LogWarning($"RSS feed {feed.title} has no URL.");
+                        continue;
+                    }
 
-                        if (response.IsSuccessStatusCode)
+                    var client = GetClient();
+                    var response = await client.GetAsync(feed.url);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var content = await response.Content.ReadAsStringAsync();
+                        var rss = XDocument.Parse(content);
+                        var items = rss.Descendants("item");
+
+                        foreach (var item in items)
                         {
-                            var content = await response.Content.ReadAsStringAsync();
-                            var rss = XDocument.Parse(content);
-                            var items = rss.Descendants("item");
+                            var title = item.Element("title")?.Value;
+                            var link = item.Element("link")?.Value;
+                            var description = item.Element("description")?.Value;
+                            var pubDate = item.Element("pubDate")?.Value;
 
-                            foreach (var item in items)
+                            if (!string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(link) && !string.IsNullOrEmpty(description) && !string.IsNullOrEmpty(pubDate))
                             {
-                                var title = item.Element("title")?.Value;
-                                var link = item.Element("link")?.Value;
-                                var description = item.Element("description")?.Value;
-                                var pubDate = item.Element("pubDate")?.Value;
-
-                                if (!string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(link) && !string.IsNullOrEmpty(description) && !string.IsNullOrEmpty(pubDate))
+                                try
                                 {
                                     var article = new RSSArticle
                                     {
@@ -137,24 +150,32 @@ namespace SBMirror.Services
                                     };
                                     articles.Add(article);
                                 }
+                                catch (FormatException ex)
+                                {
+                                    _logger.LogError(ex, $"Failed to parse pubDate for article {title}");
+                                }
+                            }
+                            else
+                            {
+                                _logger.LogWarning($"Skipping article with missing fields: {title}");
                             }
                         }
-                        else
-                        {
-                            _logger.LogError($"Failed to load RSS feed {feed?.title}. Status code: {response.StatusCode}");
-                        }
                     }
-                    catch (HttpRequestException hre)
+                    else
                     {
-                        _logger.LogError(hre, $"Error loading RSS feed {feed?.title}");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"Unexpected error loading RSS feed {feed?.title}");
+                        _logger.LogError($"Failed to load RSS feed {feed.title}. Status code: {response.StatusCode}");
                     }
                 }
-                NewsArticles = articles;
+                catch (HttpRequestException hre)
+                {
+                    _logger.LogError(hre, $"Error loading RSS feed {feed.title}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Unexpected error loading RSS feed {feed.title}");
+                }
             }
+            NewsArticles = articles;
             return articles;
         }
     }
