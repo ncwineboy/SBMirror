@@ -1,0 +1,36 @@
+﻿@using SBMirror.Services
+@using SBMirror.Models
+@inject RSSFeedService rss
+@rendermode InteractiveServer
+
+@if (article != null &&!string.IsNullOrEmpty(article.title))
+{
+	<div class="bright medium">@article.title</div>
+	<div class="small">@article.pubDate.ToLongDateString()</div>
+	<div class="small">@article.description</div>
+}
+
+@code {
+    List<RSSArticle> articles = new List<RSSArticle>();
+    RSSArticle article = new RSSArticle();
+
+    protected override async Task OnInitializedAsync()
+    {
+        articles = await rss.LoadArticles();
+        article = rss.PickCurrentArticle();
+        rss.NewsArticlesChanged += HandleChange;
+        rss.CurrentArticleChanged += HandleCurrentArticleChange;
+    }
+
+    private void HandleCurrentArticleChange(RSSArticle newArticle)
+    {
+        article = newArticle;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleChange(List<RSSArticle> newList)
+    {
+        articles = newList;
+        InvokeAsync(StateHasChanged);
+    }
+}

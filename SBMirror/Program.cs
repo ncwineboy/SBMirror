@@ -1,5 +1,5 @@
-using Polly.Extensions.Http;
 using Polly;
+using Polly.Extensions.Http;
 using SBMirror.Components;
 using SBMirror.Services;
 
@@ -10,14 +10,12 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
-
-
 var retryPolicy = HttpPolicyExtensions.HandleTransientHttpError()
     .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
 builder.Services.AddHttpClient("www", client =>
 {
-    client.DefaultRequestHeaders.UserAgent.ParseAdd("myAPI");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("SBMirror");
 }).AddPolicyHandler(retryPolicy);
 
 builder.Logging.ClearProviders();
@@ -26,6 +24,8 @@ builder.Logging.AddConsole();
 builder.Services.AddSingleton<AmbientWeatherService>();
 builder.Services.AddSingleton<NationalWeatherService>();
 builder.Services.AddSingleton<CountdownService>();
+builder.Services.AddSingleton<RSSFeedService>();
+builder.Services.AddSingleton<CalendarService>();
 
 
 var app = builder.Build();

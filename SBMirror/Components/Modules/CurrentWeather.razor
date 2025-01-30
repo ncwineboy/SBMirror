@@ -1,0 +1,153 @@
+﻿@using SBMirror.Logic
+@using SBMirror.Models.Weather
+@using SBMirror.Services
+@inject AmbientWeatherService ambient
+@inject NationalWeatherService nws
+@inject ILogger<CurrentWeather> logger
+@rendermode InteractiveServer
+
+<table width="100%">
+    <tr>
+        <td valign="middle" align="right">
+            @if (sunriseSunset.Calculated)
+            {
+                <img src="images/sunrise-48.png" />
+                @sunriseSunset.Sunrise.ToShortTimeString()
+            }
+            else
+            {
+                <div class="dimmed">Calculating...</div>
+            }
+        </td>
+        <td valign="middle" align="right">
+            @if (sunriseSunset.Calculated)
+            {
+                <img src="images/sunset-48.png" />
+                @sunriseSunset.Sunset.ToShortTimeString()
+            }
+            else
+            {
+                <div class="dimmed">Calculating...</div>
+            }
+        </td>
+        <td valign="middle" align="right">
+            @if (moonPhase == null)
+            {
+                <div class="dimmed">Calculating...</div>
+            }
+            else
+            {
+                <img src="@moonPhase" />
+            }
+        </td>
+    </tr>
+
+    @if (current.dateutc != 0)
+    {
+        <tr>
+            <td valign="middle" align="right">
+                <img src="images/wind-48.png" />@current.windspeedmph <sup>@current.Direction</sup>
+            </td>
+            <td valign="middle" align="right">
+                <img src="images/hygrometer-48.png" /> @current.humidity%
+            </td>
+            <td valign="middle" align="right">
+                <img src="images/rain-gauge-48.png" /> @current.dailyrainin
+            </td>
+        </tr>
+        <tr>
+            <td valign="middle" align="right">
+                @if (forecast.currentConditions != "N/A")
+                {
+                    <img src="@forecast.currentConditions" width="50"/>
+                }
+            </td>
+            <td colspan="2" align="right">
+                <div class="large light">
+                    <span class="bright">@current.tempf&deg;</span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3" align="right">
+                <div class="normal medium feelslike"><span class="dimmed">Feels like @current.feelsLike&deg;</span></div>
+            </td>
+        </tr>
+    }
+    else
+    {
+        <tr>
+            <td colspan="3"><div class="dimmed">Loading...</div></td>
+        </tr>
+    }
+</table>
+<hr />
+@if (forecast.forecast.Count > 0)
+{
+    <table class="small weather">
+        @foreach (var day in forecast.forecast)
+        {
+            <tr class="colored">
+                <td class="day">@day.day</td>
+                <td class="bright weather-icon">
+                    @if (day.icon != null)
+                    {
+                        <span class="wi weathericon"><img src="@day.icon.Replace("medium", "small")" width="30" /></span>
+                    }
+                </td>
+                <td class="align-right bright max-temp">@day.high&deg;</td>
+                <td class="align-right min-temp">@day.low&deg;</td>
+            </tr>
+        }
+    </table>
+}
+
+@code {
+    private Lastdata current = new Lastdata();
+    private SunriseSunset sunriseSunset = new SunriseSunset();
+    private string? moonPhase = null;
+    private WeatherForecast forecast = new WeatherForecast();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var weatherTask = ambient.ReadWeatherStationData();
+            var forecastTask = nws.GenerateWeatherForecast();
+
+            await Task.WhenAll(weatherTask, forecastTask);
+
+            current = await weatherTask;
+            forecast = await forecastTask;
+
+            sunriseSunset = SunriseSunsetCalculator.SunriseSunSetCalc();
+            moonPhase = MoonPhase.GetMoonPhaseImage(MoonPhase.MoonPhaseCalculator(DateTime.Now));
+
+            ambient.LastdataChanged += HandleChange;
+            nws.ForecastChanged += ForecastChange;
+        }
+        catch (AggregateException ae)
+        {
+			logger.LogError($"Error initializing component: {ae.InnerException?.Message}");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError($"Error initializing component: {ex.Message}");
+        }
+    }
+
+    private void HandleChange(Lastdata newCurrent)
+    {
+        if (newCurrent.dateutc > 0)
+        {
+            current = newCurrent;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ForecastChange(WeatherForecast weatherForecast)
+    {
+        forecast = weatherForecast;
+        InvokeAsync(StateHasChanged);
+    }
+}

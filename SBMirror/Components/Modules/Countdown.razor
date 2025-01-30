@@ -1,0 +1,33 @@
+﻿@using SBMirror.Services
+@using SBMirror.Models
+@inject CountdownService countdown
+@rendermode InteractiveServer
+
+@foreach (var item in countdowns)
+{
+	<p style="text-align:center;">
+		<div class="bright small">@item.name</div>
+		<div class="small">@item.TimeUntil.Days days
+			@if (item.showTime)
+			{
+				@string.Format("{0:00}:{1:00}:{2:00}", @item.TimeUntil.Hours, @item.TimeUntil.Minutes, @item.TimeUntil.Seconds)
+			}
+		</div>
+	</p>
+}
+
+@code {
+	List<CountdownItem> countdowns = new List<CountdownItem>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		countdowns = await countdown.GetCurrentCountdowns();
+		countdown.CountdownsChanged += HandleChange;
+	}
+
+	private void HandleChange(List<CountdownItem> newList)
+	{
+		countdowns = newList;
+		InvokeAsync(StateHasChanged);
+	}
+}

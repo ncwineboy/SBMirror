@@ -1,0 +1,56 @@
+﻿@using SBMirror.Models
+@using SBMirror.Services
+@inject CalendarService cal;
+
+<br />
+<div class="module header small" style="display: block;"><u>@calendarConfig.Header</u></div>
+<table class="calendar" width="100%">
+	@for (int i = 0; i < calendarConfig.NumberOfDaysToShow; i++)
+	{
+		var events = calendarEvents.Where(x => x.DaysFromNow == i).ToList().OrderBy(x => x.Start);
+		foreach (var _event in events)
+		{
+			var classStr = "xsmall";
+			@if (DateOnly.FromDateTime(_event.Start) == DateOnly.FromDateTime(DateTime.Now))
+			{
+				classStr = "xsmall today";
+			}
+			@if (i < (calendarConfig.NumberOfDaysToShow / 2))
+			{
+				<tr class="@classStr">
+					<td class="title bright">@_event.Summary</td>
+					<td class="time light" align="right">@_event.TimeTill</td>
+				</tr>
+			}
+			else
+			{
+				<tr class="@classStr" style="opacity: @(1 - ((i - (calendarConfig.NumberOfDaysToShow / 2) + 1) * 0.2))">
+					<td class="title bright">@_event.Summary</td>
+					<td class="time light" align="right">@_event.TimeTill</td>
+				</tr>
+			}
+		}
+	}
+</table>
+@code {
+	ConfigCalendar calendarConfig = new ConfigCalendar();
+	List<CalendarEvent> calendarEvents = new List<CalendarEvent>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		calendarConfig = Settings.GetConfig<ConfigCalendar>("Calendar") ?? new ConfigCalendar();
+		calendarEvents = await cal.ReadCalendars();
+
+		cal.CalendarEventsChanged += HandleChange;
+	}
+
+	private void HandleChange(List<CalendarEvent> calEvents)
+	{
+		if (calEvents.Count > 0)
+		{
+			calendarEvents.Clear();
+			calendarEvents = calEvents;
+			InvokeAsync(StateHasChanged);
+		}
+	}
+}

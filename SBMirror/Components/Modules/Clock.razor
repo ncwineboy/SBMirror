@@ -1,0 +1,51 @@
+﻿@using System.Threading
+@using Newtonsoft.Json
+@using SBMirror.Models
+@implements IDisposable
+@inject ILogger<Clock> logger
+@rendermode InteractiveServer
+
+<div class="clock-grid">
+    <div class="date normal medium">@currentTime.ToLongDateString()</div>
+    <div class="time bright large light">
+        @if (config.timeFormat == 12)
+        {
+            @currentTime.ToString("h:mm")<sup class="seconds dimmed">@currentTime.Second.ToString("00")</sup> @currentTime.ToString("tt").ToLower()
+        }
+        else
+        {
+            @currentTime.ToString("HH:mm")<sup class="seconds dimmed">@currentTime.Second.ToString("00")</sup>
+        }
+    </div>
+</div>
+
+@code {
+    private DateTime currentTime;
+    private Timer? timer;
+    private readonly object timerLock = new object();
+    private ConfigClock config = new ConfigClock(); 
+
+    protected override void OnInitialized()
+    {
+        config = Settings.GetConfig<ConfigClock>("Clock") ?? new ConfigClock();
+        currentTime = DateTime.Now;
+        timer = new Timer(UpdateClock, null, 0, 1000);
+    }
+
+    private void UpdateClock(object? state)
+    {
+        lock (timerLock)
+        {
+            currentTime = DateTime.Now;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (timerLock)
+        {
+            timer?.Dispose();
+        }
+    }
+}

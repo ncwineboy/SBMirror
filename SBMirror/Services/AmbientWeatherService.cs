@@ -1,81 +1,101 @@
 ﻿using System.Timers;
 using Newtonsoft.Json;
 using SBMirror.Interfaces;
+using SBMirror.Logic;
+using SBMirror.Models;
 using SBMirror.Models.Weather;
 
 namespace SBMirror.Services
 {
-    public class AmbientWeatherService : IAmbientWeatherService, IDisposable
+    /// <summary>
+    /// Service to interact with the Ambient Weather API and fetch weather forecasts.
+    /// </summary>
+    public class AmbientWeatherService : MirrorModuleServiceBase<ConfigWeather>, IAmbientWeatherService, IDisposable
     {
-        private readonly IHttpClientFactory _factory;
-        private readonly ILogger _logger;
-        private static int intervalInSeconds = 15;
-        private readonly System.Timers.Timer timer;
         public Lastdata current { get; set; } = new Lastdata();
 
-        public AmbientWeatherService(IHttpClientFactory factory, ILoggerFactory logger)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AmbientWeatherService"/> class.
+        /// </summary>
+        /// <param name="factory">The HTTP client factory.</param>
+        /// <param name="logger">The logger factory.</param>
+        public AmbientWeatherService(IHttpClientFactory factory, ILoggerFactory logger) : 
+            base(factory, logger, "CurrentWeather") 
         {
-            _factory = factory;
             current = new Lastdata();
-            timer = new System.Timers.Timer(TimeSpan.FromSeconds(intervalInSeconds));
-            timer.Elapsed += TimerTick;
-            timer.Enabled = true;
-            _logger = logger.CreateLogger(typeof(AmbientWeatherService));
         }
 
         public event Action<Lastdata>? LastdataChanged;
 
-        public void TimerTick(object? sender, ElapsedEventArgs e)
+        /// <summary>
+        /// Timer tick event handler to fetch weather forecast periodically.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override async Task TimerTick(object? sender, ElapsedEventArgs e)
         {
-            var value = ReadWeatherStationData("24:D7:EB:CF:2D:48", "c023fe6784564f48b85cdc3c09e9065545b24483988348cdab4ed003294f6eaa", "04df461c6e074ce3928465ae6799b9c1c60d9dbe68b44c60bf5502ef5973d248").Result;
-            if (value.dateutc != 0)
+            var value = await ReadWeatherStationData();
+            if (value != null && value.dateutc != 0)
             {
                 current = value;
                 LastdataChanged?.Invoke(current);
             }
         }
 
-        public async Task<Lastdata> ReadWeatherStationData(string macAddress, string applicationKey, string apiKey)
+        /// <summary>
+        /// Reads the weather station data.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Lastdata> ReadWeatherStationData()
         {
-            var returnval = new Lastdata();
-            var httpClient = _factory.CreateClient("www");
-            var url = $"https://rt.ambientweather.net/v1/devices?applicationKey={applicationKey}&apiKey={apiKey}";
-            try
+            if (_config != null)
             {
-                var response = await httpClient.GetAsync(url);
-                if (response.IsSuccessStatusCode)
+                if (string.IsNullOrEmpty(_config.wsApplicationKey) || string.IsNullOrEmpty(_config.wsApiKey))
                 {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var observations = JsonConvert.DeserializeObject<List<AWSResponse>>(json) ?? new List<AWSResponse>();
-                    if (observations.Count > 0)
+                    return new Lastdata();
+                }
+
+                var httpClient = GetClient();
+                var url = $"https://rt.ambientweather.net/v1/devices?applicationKey={_config.wsApplicationKey}&apiKey={_config.wsApiKey}";
+
+                try
+                {
+                    var response = await httpClient.GetAsync(url);
+                    if (response.IsSuccessStatusCode)
                     {
-                        var station = observations.Where(x => x.macAddress != null && x.macAddress.ToUpper() == macAddress.ToUpper()).FirstOrDefault();
-                        if (station != null)
+                        var json = await response.Content.ReadAsStringAsync();
+                        var observations = JsonConvert.DeserializeObject<List<AWSResponse>>(json) ?? new List<AWSResponse>();
+
+                        if (observations.Count > 0)
                         {
-                            returnval = station.lastData;
+                            AWSResponse? station = null;
+                            if (!string.IsNullOrEmpty(_config.wsMacAddress))
+                            {
+                                station = observations.Where(x => x.macAddress != null && x.macAddress.ToUpper() == _config.wsMacAddress.ToUpper()).FirstOrDefault();
+                            }
+                            else
+                            {
+                                station = observations.FirstOrDefault();
+                            }
+
+                            if (station != null && station.lastData != null)
+                            {
+                                return station.lastData;
+                            }
                         }
                     }
+                    else
+                    {
+                        _logger.LogWarning($"Received a {response.StatusCode} from {url}");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _logger.LogWarning($"Received a {response.StatusCode} from {url}");
+                    _logger.LogError(ex.Message);
                 }
             }
-            catch (AggregateException ae)
-            {
-                _logger.LogError(ae.InnerException?.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-            }
-            return returnval ?? new Lastdata();
-        }
-
-        public void Dispose()
-        {
-            timer.Stop();
-            timer.Dispose();
+            return new Lastdata();
         }
     }
 }
