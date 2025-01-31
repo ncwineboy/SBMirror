@@ -78,7 +78,7 @@ namespace SBMirror.Models
                            new RSSFeed
                            {
                                title = "New York Times",
-                               url = "https://rss.nytimes.com/services/xml/rss/nyt/US.xml"
+                               url = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
                            }
                         }
                     }
