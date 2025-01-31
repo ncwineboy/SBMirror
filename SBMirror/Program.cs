@@ -1,6 +1,7 @@
 using Polly;
 using Polly.Extensions.Http;
 using SBMirror.Components;
+using SBMirror.Models;
 using SBMirror.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,7 @@ builder.Services.AddSingleton<CountdownService>();
 builder.Services.AddSingleton<RSSFeedService>();
 builder.Services.AddSingleton<CalendarService>();
 
+Settings.LoadConfig("c:\\settings.json");
 
 var app = builder.Build();
 
