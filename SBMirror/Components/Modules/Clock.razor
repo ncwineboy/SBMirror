@@ -24,11 +24,27 @@
     private Timer? timer;
     private readonly object timerLock = new object();
     private ConfigClock config = new ConfigClock(); 
+    private TimeZoneInfo timeZoneInfo = TimeZoneInfo.Local;
 
     protected override void OnInitialized()
     {
         config = Settings.GetConfig<ConfigClock>("Clock") ?? new ConfigClock();
-        currentTime = DateTime.Now;
+        if (!string.IsNullOrEmpty(config.timezone))
+        {
+            try
+            {
+                timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(config.timezone);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to find timezone {timezone}", config.timezone);
+            }
+            currentTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
+        }
+        else
+        {
+            currentTime = DateTime.Now;
+        }
         timer = new Timer(UpdateClock, null, 0, 1000);
     }
 
@@ -36,7 +52,7 @@
     {
         lock (timerLock)
         {
-            currentTime = DateTime.Now;
+            currentTime = TimeZoneInfo.ConvertTime(DateTime.Now, timeZoneInfo);
             InvokeAsync(StateHasChanged);
         }
     }
