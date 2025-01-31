@@ -51,7 +51,6 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(SBMirror.Client._Imports).Assembly);
+    .AddInteractiveWebAssemblyRenderMode();
 
 app.Run();
