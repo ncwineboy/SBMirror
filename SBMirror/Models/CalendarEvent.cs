@@ -1,4 +1,6 @@
-﻿namespace SBMirror.Models
+﻿using Newtonsoft.Json;
+
+namespace SBMirror.Models
 {
     public class CalendarEvent
     {
@@ -7,6 +9,7 @@
         public DateTime End { get; set; }
         public string? Location { get; set; }
 
+        [JsonIgnore]
         public int DaysFromNow
         {
             get
@@ -16,6 +19,7 @@
             }
         }
 
+        [JsonIgnore]
         public bool AllDay
         {
             get
@@ -24,6 +28,7 @@
             }
         }
 
+        [JsonIgnore]
         public string TimeTill
         {
             get

@@ -1,4 +1,6 @@
-﻿namespace SBMirror.Models
+﻿using Newtonsoft.Json;
+
+namespace SBMirror.Models
 {
     public class ConfigCountdown : ModuleConfigBase
     {
@@ -18,14 +20,16 @@
         public bool showTime { get; set; } = true;
         public bool recurring { get; set; } = true;
 
+        [JsonIgnore]
         public double YearsDiff
         {
             get
             {
-                return ((DateTime.Now - date).TotalDays / 365) + 1;
+                return ((DateTime.Now - date).TotalDays / 365);
             }
         }
 
+        [JsonIgnore]
         public bool ShowCountdown
         {
             get
@@ -35,7 +39,7 @@
                 {
                     if (date < DateTime.Now)
                     {
-                        var newDate = date.AddYears((int)YearsDiff);
+                        var newDate = date.AddYears((int)Math.Round(YearsDiff));
                         daysTill = (newDate - DateTime.Now).TotalDays;
                     }
                     else
@@ -47,10 +51,11 @@
                 {
                     daysTill = (date - DateTime.Now).TotalDays;
                 }
-                return daysTill <= daysBeforeStart;
+                return (daysTill > 0) && (daysTill <= daysBeforeStart);
             }
         }
 
+        [JsonIgnore]
         public TimeSpan TimeUntil
         {
             get
