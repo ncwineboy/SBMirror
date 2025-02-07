@@ -1,9 +1,44 @@
-﻿<img src="@imageUrl" />
-@code {
-	private string imageUrl = string.Empty;
+﻿@using Google.Apis.PhotosLibrary.v1.Data
+@using SBMirror.Services
+@inject PhotoService photos
+@rendermode InteractiveServer
 
-	protected override async Task OnInitializedAsync()
+@if (!string.IsNullOrEmpty(mediaItem.MimeType))
+{
+	if (@mediaItem.MimeType.Contains("image"))
 	{
-		await base.OnInitializedAsync();
+		<div align="center">
+			<img src="@mediaItem.BaseUrl" class="bgimage" style="max-width: 500px; max-height: 500px;" />
+			<br />
+			@(DateTime.SpecifyKind((DateTime)mediaItem.MediaMetadata.CreationTime, DateTimeKind.Utc).ToLocalTime().ToLongDateString())
+		</div>
+	}
+	else
+	{
+		@if (mediaItem.MimeType.Contains("video"))
+		{
+			<video controls autoplay loop>
+				<source src="@mediaItem.BaseUrl" type="@mediaItem.MimeType" />
+			</video>
+		}
+	}
+}
+
+@code {
+	List<MediaItem> mediaItems = new List<MediaItem>();
+	MediaItem mediaItem = new MediaItem();
+
+	protected override void OnInitialized()
+	{
+		mediaItem = photos.PickCurrentPhoto();
+		photos.PhotoChanged += HandleCurrentPhotoChange;
+		base.OnInitialized();
+	}
+
+
+	private void HandleCurrentPhotoChange(MediaItem mediaItem)
+	{
+		this.mediaItem = mediaItem;
+		InvokeAsync(StateHasChanged);
 	}
 }

@@ -27,6 +27,7 @@ builder.Services.AddSingleton<NationalWeatherService>();
 builder.Services.AddSingleton<CountdownService>();
 builder.Services.AddSingleton<RSSFeedService>();
 builder.Services.AddSingleton<CalendarService>();
+builder.Services.AddSingleton<PhotoService>();
 
 Settings.LoadConfig("c:\\settings.json");
 
