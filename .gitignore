@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /SBMirror/client_secret_301924068000-v30jspi0cb8juh876b2t5260pprf7838.apps.googleusercontent.com.json
+/SBMirror/client_secret.json

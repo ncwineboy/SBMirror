@@ -4,6 +4,7 @@ using Google.Apis.PhotosLibrary.v1;
 using Google.Apis.PhotosLibrary.v1.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
+using Newtonsoft.Json.Serialization;
 using SBMirror.Logic;
 using SBMirror.Models;
 
@@ -64,12 +65,12 @@ namespace SBMirror.Services
         public async Task<List<MediaItem>> GetPhotos()
         {
             var returnval = new List<MediaItem>();
-            if (_config != null)
+            if (_config != null && _config.IsValid())
             {
                 UserCredential credential;
                 try
                 {
-                    using (var stream = new FileStream("client_secret_301924068000-v30jspi0cb8juh876b2t5260pprf7838.apps.googleusercontent.com.json", FileMode.Open, FileAccess.Read))
+                    using (var stream = new FileStream(_config.clientJson, FileMode.Open, FileAccess.Read))
                     {
                         string credPath = Environment.GetFolderPath(
                         Environment.SpecialFolder.Personal);
@@ -93,7 +94,7 @@ namespace SBMirror.Services
                     var albums = await albumsreq.ExecuteAsync();
                     if (albums != null)
                     {
-                        var album = albums.Albums?.FirstOrDefault(x => x.Title == _config.AlbumName);
+                        var album = albums.Albums?.FirstOrDefault(x => x.Title == _config.albumName);
                         if (album != null)
                         {
                             do

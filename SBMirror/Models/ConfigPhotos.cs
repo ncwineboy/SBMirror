@@ -2,12 +2,13 @@
 {
     public class ConfigPhotos : ModuleConfigBase
     {
-        public string AlbumName { get; set; } = "Photo Frame";
+        public string clientJson { get; set; } = string.Empty;
+        public string albumName { get; set; } = string.Empty;
         public int displayLengthInSeconds { get; set; } = 30;
 
         public override bool IsValid()
         {
-            return (!string.IsNullOrEmpty(AlbumName) && displayLengthInSeconds > 0);
+            return (!string.IsNullOrEmpty(clientJson) && !string.IsNullOrEmpty(albumName) && displayLengthInSeconds > 0);
         }
     }
 }
