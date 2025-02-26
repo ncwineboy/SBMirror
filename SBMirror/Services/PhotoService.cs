@@ -4,12 +4,14 @@ using Google.Apis.PhotosLibrary.v1;
 using Google.Apis.PhotosLibrary.v1.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
-using Newtonsoft.Json.Serialization;
 using SBMirror.Logic;
 using SBMirror.Models;
 
 namespace SBMirror.Services
 {
+    /// <summary>
+    /// Service to manage photos.
+    /// </summary>
     public class PhotoService : MirrorModuleServiceBase<ConfigPhotos>
     {
         private readonly System.Timers.Timer? _displayTimer;
@@ -18,8 +20,16 @@ namespace SBMirror.Services
         MediaItem mediaItem = new MediaItem();
         private string[] scopes = { PhotosLibraryService.Scope.PhotoslibraryReadonly };
 
+        /// <summary>
+        /// Event raised when the current photo changes.
+        /// </summary>
         public event Action<MediaItem>? PhotoChanged;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PhotoService"/> class.
+        /// </summary>
+        /// <param name="factory"></param>
+        /// <param name="logger"></param>
         public PhotoService(IHttpClientFactory factory, ILoggerFactory logger) : base(factory, logger, "Photos")
         {
             if (_config != null && _config.IsValid())
@@ -30,11 +40,23 @@ namespace SBMirror.Services
             }
         }
 
+        /// <summary>
+        /// Timer tick event handler to fetch photos periodically.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <returns></returns>
         public override async Task TimerTick(object? sender, ElapsedEventArgs e)
         {
             mediaItems = await GetPhotos();
         }
 
+        /// <summary>
+        /// Timer tick event handler to fetch current photo periodically.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <returns></returns>
         public async Task DisplayTimerTick(object? sender, ElapsedEventArgs e)
         {
             if (mediaItems == null || mediaItems.Count == 0)
@@ -45,6 +67,10 @@ namespace SBMirror.Services
             PhotoChanged?.Invoke(mediaItem);
         }
 
+        /// <summary>
+        /// Picks a random photo from the current month.
+        /// </summary>
+        /// <returns></returns>
         public MediaItem PickCurrentPhoto()
         {
             if (mediaItems == null || mediaItems.Count == 0)
@@ -57,11 +83,19 @@ namespace SBMirror.Services
             return returnval;
         }
 
+        /// <summary>
+        /// Gets the current month's photos.
+        /// </summary>
+        /// <returns></returns>
         private List<MediaItem> CurrentMonthPhotos()
         {
             return mediaItems.Where(x => (DateTime.SpecifyKind((DateTime)x.MediaMetadata.CreationTime, DateTimeKind.Utc)).Month == DateTime.UtcNow.Month).ToList();
         }
 
+        /// <summary>
+        /// Gets the photos.
+        /// </summary>
+        /// <returns></returns>
         public async Task<List<MediaItem>> GetPhotos()
         {
             var returnval = new List<MediaItem>();

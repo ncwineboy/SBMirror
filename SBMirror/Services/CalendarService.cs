@@ -46,9 +46,26 @@ namespace SBMirror.Services
         public async Task<List<CalendarEvent>> ReadCalendars()
         {
             List<CalendarEvent> returnval = new List<CalendarEvent>();
-            if (_config != null)
+            if (_config != null && _config.IsValid())
             {
-                var httpClient = GetClient();
+                switch (_config.CalendarType)
+                {
+                    case CalendarType.ICS:
+                        returnval = await ReadICSCalendar();
+                        break;
+                    case CalendarType.Google:
+                        break;
+                }
+            }
+            return returnval.OrderBy(x => x.Start).ToList();
+        }
+
+        private async Task<List<CalendarEvent>> ReadICSCalendar()
+        {
+            List<CalendarEvent> returnval = new List<CalendarEvent>();
+            var httpClient = GetClient();
+            if (_config != null && _config.IsValid())
+            {
                 foreach (var calendar in _config.Calendars)
                 {
                     try
@@ -78,7 +95,7 @@ namespace SBMirror.Services
                     }
                 }
             }
-            return returnval.OrderBy(x => x.Start).ToList();
+            return returnval;
         }
 
         /// <summary>

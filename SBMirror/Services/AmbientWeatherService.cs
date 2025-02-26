@@ -12,6 +12,9 @@ namespace SBMirror.Services
     /// </summary>
     public class AmbientWeatherService : MirrorModuleServiceBase<ConfigWeather>, IAmbientWeatherService, IDisposable
     {
+        /// <summary>
+        /// The current weather data.
+        /// </summary>
         public Lastdata current { get; set; } = new Lastdata();
 
         /// <summary>
@@ -25,6 +28,9 @@ namespace SBMirror.Services
             current = new Lastdata();
         }
 
+        /// <summary>
+        /// Event to notify subscribers when the current weather data changes.
+        /// </summary>
         public event Action<Lastdata>? LastdataChanged;
 
         /// <summary>
